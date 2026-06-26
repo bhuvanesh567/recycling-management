@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iWaste Recycling India | Operator Admin Dashboard</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js for analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Admin Styles -->
+  <style>
+    /* Styling variables to match index style */
+    :root {
+      --color-forest: #0f2d1e;
+      --color-forest-medium: #1b4d32;
+      --color-mint: #2ec4b6;
+      --color-accent-green: #38b000;
+      --color-light-green: #d8f3dc;
+      --color-charcoal: #121413;
+      --color-slate: #5f6c65;
+      --color-white: #ffffff;
+      --color-offwhite: #f7f9f8;
+      
+      --font-title: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      --border: 1px solid rgba(15, 45, 30, 0.08);
+      --radius: 12px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--color-offwhite);
+      color: var(--color-forest);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Admin Navbar */
+    .admin-nav {
+      background-color: var(--color-forest);
+      color: var(--color-white);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    .admin-logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .admin-logo-area img {
+      height: 40px;
+    }
+
+    .admin-logo-area h2 {
+      font-family: var(--font-title);
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .admin-nav .back-btn {
+      color: var(--color-mint);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: 1px solid var(--color-mint);
+      border-radius: 6px;
+      transition: all 0.3s;
+    }
+
+    .admin-nav .back-btn:hover {
+      background-color: var(--color-mint);
+      color: var(--color-forest);
+    }
+
+    /* Dashboard Layout */
+    .dashboard-container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 40px auto;
+      padding: 0 32px;
+      flex: 1;
+    }
+
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+
+    .dashboard-header h1 {
+      font-family: var(--font-title);
+      font-size: 2rem;
+    }
+
+    .refresh-btn {
+      background-color: var(--color-forest-medium);
+      color: var(--color-white);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background-color 0.3s;
+    }
+
+    .refresh-btn:hover {
+      background-color: var(--color-accent-green);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background-color: var(--color-white);
+      border: var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      background-color: rgba(56, 176, 0, 0.08);
+      color: var(--color-accent-green);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+
+    .stat-card:nth-child(2) .stat-icon {
+      background-color: rgba(46, 196, 182, 0.08);
+      color: var(--color-mint);
+    }
+
+    .stat-card:nth-child(3) .stat-icon {
+      background-color: rgba(255, 193, 7, 0.08);
+      color: #ffc107;
+    }
+
+    .stat-info h3 {
+      font-size: 2rem;
+      font-family: var(--font-title);
+    }
+
+    .stat-info p {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: var(--color-slate);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* Dashboard Details Split Grid */
+    .details-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 32px;
+    }
+
+    .card {
+      background-color: var(--color-white);
+      border: var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow);
+      margin-bottom: 32px;
+    }
+
+    .card-title {
+      font-family: var(--font-title);
+      font-size: 1.4rem;
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--color-offwhite);
+      padding-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Table Styling */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      font-family: var(--font-title);
+      font-weight: 600;
+      padding: 16px;
+      border-bottom: 2px solid var(--color-offwhite);
+      color: var(--color-forest-medium);
+      font-size: 0.95rem;
+    }
+
+    td {
+      padding: 16px;
+      border-bottom: 1px solid var(--color-offwhite);
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+
+    tr:hover {
+      background-color: rgba(247, 249, 248, 0.5);
+    }
+
+    .company-col strong {
+      font-size: 0.95rem;
+      color: var(--color-forest);
+      display: block;
+    }
+
+    .company-col span {
+      font-size: 0.8rem;
+      color: var(--color-slate);
+    }
+
+    .tracking-code {
+      font-family: monospace;
+      font-weight: 700;
+      background-color: var(--color-light-green);
+      color: var(--color-forest-medium);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    /* Dropdown Status Selector */
+    .status-select {
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: 1px solid var(--color-slate);
+      font-size: 0.85rem;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+      background-color: var(--color-white);
+      transition: all 0.3s;
+    }
+
+    .status-select:focus {
+      border-color: var(--color-accent-green);
+    }
+
+    .status-Pending {
+      border-color: #ffc107;
+      color: #ffc107;
+      background-color: #fffbeb;
+    }
+
+    .status-Transit {
+      border-color: #3b82f6;
+      color: #3b82f6;
+      background-color: #eff6ff;
+    }
+
+    .status-Received {
+      border-color: #8b5cf6;
+      color: #8b5cf6;
+      background-color: #f5f3ff;
+    }
+
+    .status-Processing {
+      border-color: #e28743;
+      color: #e28743;
+      background-color: #fbf7f4;
+    }
+
+    .status-Refining {
+      border-color: #10b981;
+      color: #10b981;
+      background-color: #ecfdf5;
+    }
+
+    .status-Completed {
+      border-color: var(--color-forest-medium);
+      color: var(--color-forest-medium);
+      background-color: var(--color-light-green);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background-color: var(--color-forest);
+      color: var(--color-white);
+      padding: 16px 24px;
+      border-radius: var(--radius);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateY(150%);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 2000;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+    }
+
+    .toast i {
+      color: var(--color-accent-green);
+      font-size: 1.3rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .details-grid {
+        grid-template-columns: 1fr;
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .dashboard-container {
+        padding: 0 16px;
+      }
+      .admin-nav {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Admin Navigation -->
+  <nav class="admin-nav">
+    <div class="admin-logo-area">
+      <img src="/waste recycle logo_India.png" alt="iWaste Logo">
+      <h2>iWaste India Operations</h2>
+    </div>
+    <a href="index.html" class="back-btn"><i class="fa-solid fa-house"></i> View Live B2B Site</a>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="dashboard-container">
+    
+    <div class="dashboard-header">
+      <div>
+        <h1>Operational Control Console</h1>
+        <p style="color: var(--color-slate);">Authorized log entries for APPCB compliant e-waste handling.</p>
+      </div>
+      <button class="refresh-btn" id="refresh-btn">
+        <i class="fa-solid fa-arrows-rotate"></i> Refresh Enquiries
+      </button>
+    </div>
+
+    <!-- Quick Stats Counters -->
+    <div class="stats-grid">
+      <!-- Stat 1 -->
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-list-check"></i></div>
+        <div class="stat-info">
+          <h3 id="stat-total">0</h3>
+          <p>Total Enquiries</p>
+        </div>
+      </div>
+      <!-- Stat 2 -->
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-truck"></i></div>
+        <div class="stat-info">
+          <h3 id="stat-active">0</h3>
+          <p>Active Collections</p>
+        </div>
+      </div>
+      <!-- Stat 3 -->
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-spinner"></i></div>
+        <div class="stat-info">
+          <h3 id="stat-pending">0</h3>
+          <p>Pending Pickups</p>
+        </div>
+      </div>
+      <!-- Stat 4 -->
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="stat-info">
+          <h3 id="stat-completed">0</h3>
+          <p>Recycled (Safe Certs)</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Details Split Grid -->
+    <div class="details-grid">
+      <!-- Left side: B2B Enquiries List -->
+      <div class="card">
+        <div class="card-title">
+          <span>Active B2B Shipments Registry</span>
+          <span style="font-size: 0.85rem; color: var(--color-slate);" id="last-updated">Last Updated: --</span>
+        </div>
+        
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Tracking ID</th>
+                <th>Company & Contact</th>
+                <th>Volume Range</th>
+                <th>Pickup Location</th>
+                <th>Date Logged</th>
+                <th>Compliance Status</th>
+              </tr>
+            </thead>
+            <tbody id="enquiries-tbody">
+              <!-- Dynamically populated via AJAX -->
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 40px; color: var(--color-slate);">
+                  <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; margin-bottom: 12px; display: block;"></i>
+                  Loading registry records...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right side: E-Waste Analytics Charts -->
+      <div>
+        <div class="card">
+          <div class="card-title">Volume Distribution</div>
+          <div style="position: relative; height: 260px; width: 100%;">
+            <canvas id="volumeChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Process Pipeline Breakdown</div>
+          <div style="position: relative; height: 260px; width: 100%;">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Toast Message -->
+  <div class="toast" id="toast-message">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toast-text">Status updated successfully.</span>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
