@@ -4,121 +4,131 @@ const path = require('path');
 const dbHelper = require('./database');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Enable CORS and parsing middlewares
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Initialize the SQLite database and seed mock data
+// Initialize database
 dbHelper.initDatabase();
 
-// Serve static assets from the public folder
+// Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Fallback to serving public logo if the requested file exists in the parent directory
+// Logo route
 app.get('/waste%20recycle%20logo_India.png', (req, res) => {
   res.sendFile(path.join(__dirname, 'waste recycle logo_India.png'));
 });
 
-// API Routes
-
-// 1. Submit a new B2B Quote / Pickup request
+// Submit enquiry
 app.post('/api/enquiries', (req, res) => {
-  const { company_name, contact_name, email, phone, waste_volume, pickup_location, message } = req.body;
+  const {
+    company_name,
+    contact_name,
+    email,
+    phone,
+    waste_volume,
+    pickup_location
+  } = req.body;
 
-  // Basic validation
-  if (!company_name || !contact_name || !email || !phone || !waste_volume || !pickup_location) {
-    return res.status(400).json({ error: 'All fields except message are required.' });
+  if (
+    !company_name ||
+    !contact_name ||
+    !email ||
+    !phone ||
+    !waste_volume ||
+    !pickup_location
+  ) {
+    return res.status(400).json({
+      error: 'All required fields must be provided.'
+    });
   }
 
   dbHelper.createEnquiry(req.body, (err, result) => {
     if (err) {
-      console.error('Error saving enquiry:', err.message);
-      return res.status(500).json({ error: 'Database error. Failed to save request.' });
+      return res.status(500).json({
+        error: 'Failed to save enquiry.'
+      });
     }
-    
-    // Return tracking information
+
     res.status(201).json({
       success: true,
-      message: 'Pickup request submitted successfully.',
       tracking_id: result.tracking_id,
       id: result.id
     });
   });
 });
 
-// 2. Track order status by tracking ID
+// Track enquiry
 app.get('/api/track/:tracking_id', (req, res) => {
-  const trackingId = req.params.tracking_id.trim();
+  dbHelper.getTrackingStatus(req.params.tracking_id, (err, row) => {
+    if (err)
+      return res.status(500).json({
+        error: 'Database error.'
+      });
 
-  dbHelper.getTrackingStatus(trackingId, (err, row) => {
-    if (err) {
-      console.error('Error fetching tracking info:', err.message);
-      return res.status(500).json({ error: 'Database error occurred during tracking query.' });
-    }
-
-    if (!row) {
-      return res.status(404).json({ error: `Tracking ID "${trackingId}" not found.` });
-    }
+    if (!row)
+      return res.status(404).json({
+        error: 'Tracking ID not found.'
+      });
 
     res.json(row);
   });
 });
 
-// 3. Admin: Get all enquiries
+// Get all enquiries
 app.get('/api/enquiries', (req, res) => {
   dbHelper.getAllEnquiries((err, rows) => {
-    if (err) {
-      console.error('Error fetching enquiries:', err.message);
-      return res.status(500).json({ error: 'Database error. Failed to fetch requests.' });
-    }
+    if (err)
+      return res.status(500).json({
+        error: 'Database error.'
+      });
+
     res.json(rows);
   });
 });
 
-// 4. Admin: Update status of an enquiry by ID
+// Update status
 app.patch('/api/enquiries/:id/status', (req, res) => {
-  const enquiryId = req.params.id;
   const { status } = req.body;
 
   if (!status) {
-    return res.status(400).json({ error: 'Status field is required.' });
+    return res.status(400).json({
+      error: 'Status is required.'
+    });
   }
 
-  const validStatuses = [
-    'Pending Pickup', 
-    'In Transit', 
-    'Received', 
-    'Processing & Data Destruction', 
-    'Electro-Refining & Sorting', 
-    'Recycled (Certificate Issued)'
-  ];
+  dbHelper.updateStatus(req.params.id, status, (err, changes) => {
+    if (err)
+      return res.status(500).json({
+        error: 'Database error.'
+      });
 
-  if (!validStatuses.includes(status)) {
-    return res.status(400).json({ error: 'Invalid status update provided.' });
-  }
+    if (!changes)
+      return res.status(404).json({
+        error: 'Enquiry not found.'
+      });
 
-  dbHelper.updateStatus(enquiryId, status, (err, changes) => {
-    if (err) {
-      console.error('Error updating status:', err.message);
-      return res.status(500).json({ error: 'Database error. Failed to update status.' });
-    }
-
-    if (changes === 0) {
-      return res.status(404).json({ error: 'Enquiry not found.' });
-    }
-
-    res.json({ success: true, message: 'Status updated successfully.', updated_status: status });
+    res.json({
+      success: true
+    });
   });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`==================================================`);
-  console.log(` iWaste Recycling India B2B Server is running!`);
-  console.log(` Port: http://localhost:${PORT}`);
-  console.log(` Admin Portal: http://localhost:${PORT}/admin.html`);
-  console.log(`==================================================`);
+// Home page
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// Vercel exports the app
+module.exports = app;
+
+// Local development only
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
